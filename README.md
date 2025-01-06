@@ -50,3 +50,4 @@ Permet de créer des pipelines en Python avec énormément de flexibilité.
 ## Parseur html : beautifulsoup4
 https://beautiful-soup-4.readthedocs.io/en/latest/
 
+
