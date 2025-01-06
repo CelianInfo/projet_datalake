@@ -4,4 +4,12 @@ version = "0.1.0"
 description = "See README.md"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "dagster>=1.9.6",
+    "dagster-webserver>=1.9.6",
+    "pytest>=8.3.4",
+]
+
+[tool.dagster]
+module_name = "projet_datalake.definitions"
+project_name = "projet_datalake"
