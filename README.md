@@ -42,7 +42,11 @@ Depuis le cmd (ouvert en tant qu'admin)
 pip install uv
 ```
 
-## ETL / Orchestrateur
+## ETL / Orchestrateur : dagster
 https://docs.dagster.io/getting-started
 
 Permet de créer des pipelines en Python avec énormément de flexibilité.
+
+## Parseur html : beautifulsoup4
+https://beautiful-soup-4.readthedocs.io/en/latest/
+
