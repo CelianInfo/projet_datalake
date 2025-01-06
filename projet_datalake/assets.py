@@ -33,7 +33,7 @@ def copy_file(file_path, destination_folder):
         shutil.copy(file_path, destination_folder)
 
 @asset
-def files_to_process(context):
+def html_files_to_process(context):
     """
     Lists all files in the source folder.
 
@@ -44,7 +44,7 @@ def files_to_process(context):
     return list_files_in_folder(source_folder)
 
 @asset
-def processed_files(context, files_to_process):
+def processed_html_files(context, html_files_to_process):
     """
     Processes files based on their name.
 
@@ -55,7 +55,7 @@ def processed_files(context, files_to_process):
 
 
 
-    for file_path in files_to_process:
+    for file_path in html_files_to_process:
         if "GLASSDOOR" in file_path:
             if "AVIS" in file_path:
                 destination_folder = os.path.join(generic_path, 'GLASSDOOR','AVI')
