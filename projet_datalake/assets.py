@@ -1,6 +1,8 @@
 from dagster import asset, op, Output, OpExecutionContext
 import os
 import shutil
+from bs4 import BeautifulSoup
+# soup = BeautifulSoup(html_doc, 'html.parser')
 
 @op
 def list_files_in_folder(folder_path: str) -> list[str]:
@@ -31,6 +33,27 @@ def copy_file(file_path, destination_folder):
     destination_file = os.path.join(destination_folder, os.path.basename(file_path))
     if not os.path.exists(destination_file):
         shutil.copy(file_path, destination_folder)
+
+@op
+def parse_html_glassdoor_avis(file_paths: list[str]) -> list[dict]:
+    """
+    Parses HTML files and extracts the desired element.
+
+    Args:
+        file_paths: A list of paths to HTML files.
+
+    Returns:
+        A list of dictionaries, where each dictionary represents the extracted 
+        element from a single HTML file.
+    """
+    data = []
+    for file_path in file_paths:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            soup = BeautifulSoup(f, 'html.parser')
+            # Replace this with your actual element selection logic
+            element = soup.find('h1').text 
+            data.append({'file': file_path, 'element': element})
+    return data
 
 @asset
 def html_files_to_process(context):
@@ -68,3 +91,4 @@ def processed_html_files(context, html_files_to_process):
         copy_file(file_path, destination_folder) 
 
     return None
+
