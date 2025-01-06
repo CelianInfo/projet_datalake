@@ -37,6 +37,7 @@ Archive **TD_DATALAKE**
  Sert à créer un environnement virtuel.
  Extrêmement similaire à Peotry, mais beaucoup plus performant.
 
+Depuis le cmd (ouvert en tant qu'admin)
 ```
 pip install uv
 ```
@@ -45,7 +46,3 @@ pip install uv
 https://docs.dagster.io/getting-started
 
 Permet de créer des pipelines en Python avec énormément de flexibilité.
-
-```
-uv add dagster dagster-server
-```
