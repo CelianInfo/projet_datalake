@@ -72,9 +72,25 @@ with open(file_path, 'r', encoding='utf-8') as html_file:
 
         review_data['note'] = float(review.find('span', class_='value-title').get('title'))
 
+        review_data['titre'] = (review
+                                .find('a', class_='reviewLink')
+                                .find('span')
+                                .text.strip()[2:-2])
+        
+        description_employe = review.find('span',class_='authorJobTitle middle reviewer').text.split('-')
+
+        review_data['employe_status'] = description_employe[0].strip()
+        review_data['employe_poste'] = description_employe[1].strip()
+
+        if review.find('div', class_='row reviewBodyCell recommends'):
+            green_recommandations =  review.find('div', class_='row reviewBodyCell recommends').findAll('i',class_='green')#.apply(lambda x: x.text)
+            print(green_recommandations)
+
+        
+
         reviews_data.append(review_data)
 
-    print(reviews_data)
+    # print(reviews_data)
 
     # print({
     #     'nb_avis' : nb_avis,
