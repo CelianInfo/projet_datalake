@@ -93,6 +93,7 @@ with open(file_path, 'r', encoding='utf-8') as html_file:
         reviews_data.append(review_data)
 
     # print(reviews_data)
+    # print(reviews_data)
 
     # print({
     #     'nb_avis' : nb_avis,
