@@ -1,3 +1,7 @@
+# Projet ignore
+TD_DATALAKE/DATALAKE/1_LANDING/**/*.html
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
