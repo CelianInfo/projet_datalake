@@ -118,7 +118,6 @@ def parse_html_glassdoor_avis(file_path:str) -> dict:
         
             reviews_data.append(review_data)
 
-
     return result
 
 @asset
@@ -158,7 +157,7 @@ def processed_html_files(context, html_files_to_process):
 
     return None
 
-@asset
+@asset(deps=[processed_html_files])
 def json_avis_glassdoor(context):
     current_dir = os.path.dirname(__file__) 
     source_folder = os.path.join(current_dir, '..','TD_DATALAKE','DATALAKE','1_LANDING_ZONE','GLASSDOOR','AVI')
@@ -168,6 +167,11 @@ def json_avis_glassdoor(context):
 
     for file_path in file_path_list:
         result = parse_html_glassdoor_avis(file_path)
-        # file_name = file_path[:-5]
-        # with open(f"{output_folder}/{file_name}.json", "w") as outfile:
-        #     json.dump(result, outfile, indent=4)
+        file_name = file_path[:-5].split('\\')[-1]
+
+        output_file_path = os.path.join(output_folder, f"{file_name}.json")
+
+        with open(output_file_path, "w") as outfile:
+            json.dump(result, outfile, indent=4)
+    
+    return None
