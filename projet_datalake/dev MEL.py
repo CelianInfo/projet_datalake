@@ -3,103 +3,50 @@ from collections import defaultdict
 from pprint import pprint
 import json
 
-file_path = "C:/Users/ctoureille/Desktop/projet_datalake/TD_DATALAKE/DATALAKE/1_LANDING_ZONE/GLASSDOOR/AVI/13546-AVIS-SOC-GLASSDOOR-E12966_P2.html"
+file_path = "C:/Users/ctoureille/Desktop/projet_datalake/TD_DATALAKE/DATALAKE/1_LANDING_ZONE/LINKEDIN/EMP/13546-INFO-EMP-LINKEDIN-FR-1599984246.html"
 
 def parse_html_linkedin_offers(file_path):
 
-        result = {'EMP':dict(),'stats':dict(),'avis':list()}
+    result = {'EMP': dict(), 'stats': dict(), 'avis': list(), 'description': '', 'job_criteria': dict()}
 
-        with open(file_path, 'r', encoding='utf-8') as html_file:
+    with open(file_path, 'r', encoding='utf-8') as html_file:
         soup = BeautifulSoup(html_file, 'html.parser')
 
-        # Extraction du haut de page
+        # Extraction of top card details
+        topcard = soup.find('section', class_='topcard')
+
+        result['EMP']['nom'] = topcard.find('a', class_='topcard__logo-container').text.strip()   
         
-        result['EMP']['nom'] = soup.find('div', class_='topcard').text
+        result['EMP']['poste'] = topcard.find('h1', class_='topcard__title').text.strip()  
+        result['EMP']['location'] = topcard.find('span', class_='topcard__flavor--bullet').text.strip()  
 
-        compagnieHeader = soup.find('div', id='EIProductHeaders')
+        # Time posted and number of applicants
+        topcard_flavor = topcard.find_all('h3', class_='topcard__flavor-row')
+        result['EMP']['posted_time'] = topcard_flavor[1].find('span', class_='topcard__flavor--metadata').text.strip()  
+        result['EMP']['num_applicants'] = topcard_flavor[1].find('figcaption', class_='num-applicants__caption').text.strip()  
 
-        result['EMP']['nb_avis'] = int(compagnieHeader
-                .find('a', class_='eiCell cell reviews active')
-                .find('span', class_='num h2')
-                .text
-                .strip())
-        
-        result['EMP']['nb_emplois'] = int(compagnieHeader
-                .find('a', class_='eiCell cell jobs')
-                .find('span', class_='num h2')
-                .text
-                .strip())
-        
-        result['EMP']['nb_salaires'] = int(compagnieHeader
-                .find('a', class_='eiCell cell salaries')
-                .find('span', class_='num h2')
-                .text
-                .strip())
-        
-        result['EMP']['nb_entretiens'] = int(compagnieHeader
-                .find('a', class_='eiCell cell interviews')
-                .find('span', class_='num h2')
-                .text
-                .strip())
-        
-        result['EMP']['nb_avantages'] = int(compagnieHeader
-                .find('a', class_='eiCell cell benefits')
-                .find('span', class_='num h2')
-                .text
-                .strip())
-        
-        result['EMP']['nb_photos'] = int(compagnieHeader
-                .find('a', class_='eiCell cell photos')
-                .find('span', class_='num h2')
-                .text
-                .strip())
+        # Application link
+        apply_link = topcard.find('div', class_='topcard__content-right').find('a', class_='apply-button--link')['href']
+        result['EMP']['apply_link'] = apply_link
 
-        # Extraction du tableau des notations utilisateurs
+        # Extract the job description
+        description_section = soup.find('section', class_='description')
+        if description_section:
+            result['description'] = description_section.find('div', class_='description__text description__text--rich').text.strip()  
 
-        statsBody = soup.find('div', class_='empStatsBody')
+        # Extracting job criteria
+        job_criteria_section = soup.find('ul', class_='job-criteria__list')
+        job_criteria = {}
 
-        result['stats']['notation_employes'] = float(statsBody.find('div', class_='v2__EIReviewsRatingsStylesV2__ratingNum v2__EIReviewsRatingsStylesV2__large').text)
-        result['stats']['pourc_recommandation'] = int(statsBody.find('div', id='EmpStats_Recommend').get('data-percentage'))
-        result['stats']['pourc_approbation'] = int(statsBody.find('div', id='EmpStats_Approve').get('data-percentage'))
-        
-        fondateur = statsBody.find('div', class_='donut-text d-lg-table-cell pt-sm pt-lg-0 pl-lg-sm').find('div').text.strip()
+        if job_criteria_section:
+            criteria_items = job_criteria_section.find_all('li', class_='job-criteria__item')
+            for item in criteria_items:
+                subheader = item.find('h3', class_='job-criteria__subheader').text.strip()
+                criteria_text = [span.text.strip() for span in item.find_all('span', class_='job-criteria__text job-criteria__text--criteria')]
+                job_criteria[subheader] = criteria_text
 
-        nb_eval_fondateur_txt = statsBody.find('div', class_='numCEORatings').text
-        nb_eval_fondateur = int(''.join(c for c in nb_eval_fondateur_txt if c.isdigit()))
-
-        # Extraction des avis
-
-        employeeReviews = soup.findAll('li', class_='empReview')
-
-        reviews_data = result['avis']
-        for review in employeeReviews:
-                review_data = {}
-
-                review_data['note'] = float(review.find('span', class_='value-title').get('title'))
-                review_data['titre'] = review.find('a', class_='reviewLink').find('span').text.strip()[2:-2]
-
-                description_employe = review.find('span', class_='authorJobTitle middle reviewer').text.split('-')
-                review_data['employe_status'] = description_employe[0].strip()
-                review_data['employe_poste'] = description_employe[1].strip()
-
-
-                review_data['recommandations'] = defaultdict(list) 
-                if review.find('div', class_='row reviewBodyCell recommends'):
-                for color in ('green', 'yellow', 'red'):
-                        for element in review.find('div', class_='row reviewBodyCell recommends').findAll('i', class_=color):
-                        review_data['recommandations'][color].append(element.parent.find('span').text)
-
-                review_data['anciennete'] = review.find('p', class_='mainText').text
-
-                review_data['review_body'] = defaultdict(list) 
-                if review.find('div', class_='mt-md'):
-                for review_element in review.findAll('div', class_='mt-md'):
-                        element = review_element.findAll('p')
-                        review_data['review_body'][element[0].text] = element[1].text
-        
-                reviews_data.append(review_data)
-
+        result['job_criteria'] = job_criteria
 
         return result
 
-print(parse_html_linkedin_offers(file_path))
+print(json.dumps(parse_html_linkedin_offers(file_path), indent=4))
