@@ -3,52 +3,52 @@ from collections import defaultdict
 from pprint import pprint
 import json
 
-file_path = "C:/Users/ctoureille/Desktop/projet_datalake/TD_DATALAKE/DATALAKE/1_LANDING_ZONE/GLASSDOOR/AVI/13546-AVIS-SOC-GLASSDOOR-E12966_P1.html"
+file_path = "C:/Users/ctoureille/Desktop/projet_datalake/TD_DATALAKE/DATALAKE/1_LANDING_ZONE/GLASSDOOR/AVI/13546-AVIS-SOC-GLASSDOOR-E12966_P2.html"
 
-def parse_html_glassdoor_avis(file_path):
+def parse_html_linkedin_offers(file_path):
 
-result = {'societe':dict(),'stats':dict(),'avis':list()}
+result = {'EMP':dict(),'stats':dict(),'avis':list()}
 
 with open(file_path, 'r', encoding='utf-8') as html_file:
     soup = BeautifulSoup(html_file, 'html.parser')
 
     # Extraction du haut de page
-
-    result['societe']['nom'] = soup.find('div', class_='header cell info').text
+    
+    result['EMP']['nom'] = soup.find('div', class_='topcard').text
 
     compagnieHeader = soup.find('div', id='EIProductHeaders')
 
-    result['societe']['nb_avis'] = int(compagnieHeader
+    result['EMP']['nb_avis'] = int(compagnieHeader
             .find('a', class_='eiCell cell reviews active')
             .find('span', class_='num h2')
             .text
             .strip())
     
-    result['societe']['nb_emplois'] = int(compagnieHeader
+    result['EMP']['nb_emplois'] = int(compagnieHeader
             .find('a', class_='eiCell cell jobs')
             .find('span', class_='num h2')
             .text
             .strip())
     
-    result['societe']['nb_salaires'] = int(compagnieHeader
+    result['EMP']['nb_salaires'] = int(compagnieHeader
             .find('a', class_='eiCell cell salaries')
             .find('span', class_='num h2')
             .text
             .strip())
     
-    result['societe']['nb_entretiens'] = int(compagnieHeader
+    result['EMP']['nb_entretiens'] = int(compagnieHeader
             .find('a', class_='eiCell cell interviews')
             .find('span', class_='num h2')
             .text
             .strip())
     
-    result['societe']['nb_avantages'] = int(compagnieHeader
+    result['EMP']['nb_avantages'] = int(compagnieHeader
             .find('a', class_='eiCell cell benefits')
             .find('span', class_='num h2')
             .text
             .strip())
     
-    result['societe']['nb_photos'] = int(compagnieHeader
+    result['EMP']['nb_photos'] = int(compagnieHeader
             .find('a', class_='eiCell cell photos')
             .find('span', class_='num h2')
             .text
@@ -102,4 +102,4 @@ with open(file_path, 'r', encoding='utf-8') as html_file:
 
 return result
 
-print(parse_html_glassdoor_avis(file_path))
+print(parse_html_linkedin_offers(file_path))
