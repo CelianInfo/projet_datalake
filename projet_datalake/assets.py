@@ -123,6 +123,25 @@ def parse_html_glassdoor_avis(file_path:str) -> dict:
 
     return result
 
+@op
+def parse_html_glassdoor_societe(file_path):
+    with open(file_path, 'r', encoding='utf-8') as html_file:
+        soup = BeautifulSoup(html_file, 'html.parser')
+        
+    # Initialisation du dictionnaire pour stocker les résultats
+        presentation = soup.find('div', id='EmpBasicInfo')
+
+        presentation_elements = presentation.findAll('div', class_='infoEntity')
+
+        result = {}
+        for element in presentation_elements:
+            element_label = element.find('label').text.strip()
+            element_valeur = element.find('span').text.strip()
+
+            result[element_label] = element_valeur
+    
+    return result
+
 @asset
 def html_files_to_process(context):
     """
@@ -170,6 +189,25 @@ def json_avis_glassdoor(context):
 
     for file_path in file_path_list:
         result = parse_html_glassdoor_avis(file_path)
+        file_name = file_path[:-5].split('\\')[-1]
+
+        output_file_path = os.path.join(output_folder, f"{file_name}.json")
+
+        with open(output_file_path, "w") as outfile:
+            json.dump(result, outfile, indent=4)
+    
+    return None
+
+@asset(deps=[processed_html_files])
+def json_societe_glassdoor(context):
+    current_dir = os.path.dirname(__file__) 
+    source_folder = os.path.join(current_dir, '..','TD_DATALAKE','DATALAKE','1_LANDING_ZONE','GLASSDOOR','SOC')
+    output_folder = os.path.join(current_dir, '..','TD_DATALAKE','DATALAKE','2_CURATED_ZONE','GLASSDOOR','SOC')
+
+    file_path_list = list_files_in_folder(source_folder)
+
+    for file_path in file_path_list:
+        result = parse_html_glassdoor_societe(file_path)
         file_name = file_path[:-5].split('\\')[-1]
 
         output_file_path = os.path.join(output_folder, f"{file_name}.json")
