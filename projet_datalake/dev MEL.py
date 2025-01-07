@@ -12,7 +12,7 @@ def parse_html_linkedin_offers(file_path):
     with open(file_path, 'r', encoding='utf-8') as html_file:
         soup = BeautifulSoup(html_file, 'html.parser')
 
-        # Extraction of top card details
+        # Extraire les détails
         topcard = soup.find('section', class_='topcard')
 
         result['EMP']['nom'] = topcard.find('a', class_='topcard__logo-container').text.strip()   
@@ -20,21 +20,21 @@ def parse_html_linkedin_offers(file_path):
         result['EMP']['poste'] = topcard.find('h1', class_='topcard__title').text.strip()  
         result['EMP']['location'] = topcard.find('span', class_='topcard__flavor--bullet').text.strip()  
 
-        # Time posted and number of applicants
+        
         topcard_flavor = topcard.find_all('h3', class_='topcard__flavor-row')
         result['EMP']['posted_time'] = topcard_flavor[1].find('span', class_='topcard__flavor--metadata').text.strip()  
         result['EMP']['num_applicants'] = topcard_flavor[1].find('figcaption', class_='num-applicants__caption').text.strip()  
 
-        # Application link
+        # lien de l'offer
         apply_link = topcard.find('div', class_='topcard__content-right').find('a', class_='apply-button--link')['href']
         result['EMP']['apply_link'] = apply_link
 
-        # Extract the job description
+        # Extraire la déscription
         description_section = soup.find('section', class_='description')
         if description_section:
             result['description'] = description_section.find('div', class_='description__text description__text--rich').text.strip()  
 
-        # Extracting job criteria
+        # Extraire les critéres de l'offers
         job_criteria_section = soup.find('ul', class_='job-criteria__list')
         job_criteria = {}
 
