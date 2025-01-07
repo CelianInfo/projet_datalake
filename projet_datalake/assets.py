@@ -31,6 +31,9 @@ def copy_file(file_path, destination_folder):
         file_path: The path to the file to copy.
         destination_folder: The path to the destination folder.
     """
+    if not os.path.exists(destination_folder):
+        os.makedirs(destination_folder, exist_ok=True)  # Create the folder if it doesn't exist
+
     destination_file = os.path.join(destination_folder, os.path.basename(file_path))
     if not os.path.exists(destination_file):
         shutil.copy(file_path, destination_folder)
