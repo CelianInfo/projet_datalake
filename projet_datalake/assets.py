@@ -48,54 +48,44 @@ def parse_html_glassdoor_avis(file_path:str) -> dict:
 
         compagnieHeader = soup.find('div', id='EIProductHeaders')
 
-        result['societe']['nb_avis'] = int(compagnieHeader
-                .find('a', class_='eiCell cell reviews active')
-                .find('span', class_='num h2')
-                .text
-                .strip())
+        parse_element = lambda element: element.find('span', class_='num h2').text.strip()
+
+        if element := compagnieHeader.find('a', class_='eiCell cell reviews active'):
+            result['societe']['nb_avis'] = parse_element(element)
         
-        result['societe']['nb_emplois'] = int(compagnieHeader
-                .find('a', class_='eiCell cell jobs')
-                .find('span', class_='num h2')
-                .text
-                .strip())
+        if element := compagnieHeader.find('a', class_='eiCell cell jobs'):
+            result['societe']['nb_emplois'] = parse_element(element)
         
-        result['societe']['nb_salaires'] = int(compagnieHeader
-                .find('a', class_='eiCell cell salaries')
-                .find('span', class_='num h2')
-                .text
-                .strip())
+        if element := compagnieHeader.find('a', class_='eiCell cell salaries'):
+            result['societe']['nb_salaires'] = parse_element(element)
         
-        result['societe']['nb_entretiens'] = int(compagnieHeader
-                .find('a', class_='eiCell cell interviews')
-                .find('span', class_='num h2')
-                .text
-                .strip())
+        if element := compagnieHeader.find('a', class_='eiCell cell interviews'):
+            result['societe']['nb_entretiens'] = parse_element(element)
         
-        result['societe']['nb_avantages'] = int(compagnieHeader
-                .find('a', class_='eiCell cell benefits')
-                .find('span', class_='num h2')
-                .text
-                .strip())
+        if element := compagnieHeader.find('a', class_='eiCell cell benefits'):
+            result['societe']['nb_avantages'] = parse_element(element)
         
-        result['societe']['nb_photos'] = int(compagnieHeader
-                .find('a', class_='eiCell cell photos')
-                .find('span', class_='num h2')
-                .text
-                .strip())
+        if element := compagnieHeader.find('a', class_='eiCell cell photos'):
+            result['societe']['nb_photos'] = parse_element(element)
+        
 
         # Extraction du tableau des notations utilisateurs
 
         statsBody = soup.find('div', class_='empStatsBody')
 
-        result['stats']['notation_employes'] = float(statsBody.find('div', class_='v2__EIReviewsRatingsStylesV2__ratingNum v2__EIReviewsRatingsStylesV2__large').text)
-        result['stats']['pourc_recommandation'] = int(statsBody.find('div', id='EmpStats_Recommend').get('data-percentage'))
-        result['stats']['pourc_approbation'] = int(statsBody.find('div', id='EmpStats_Approve').get('data-percentage'))
-        
-        fondateur = statsBody.find('div', class_='donut-text d-lg-table-cell pt-sm pt-lg-0 pl-lg-sm').find('div').text.strip()
+        if element := statsBody.find('div', class_='v2__EIReviewsRatingsStylesV2__ratingNum v2__EIReviewsRatingsStylesV2__large'):
+            result['stats']['notation_employes'] = float(element.text)
 
-        nb_eval_fondateur_txt = statsBody.find('div', class_='numCEORatings').text
-        nb_eval_fondateur = int(''.join(c for c in nb_eval_fondateur_txt if c.isdigit()))
+        if element := statsBody.find('div', id='EmpStats_Recommend'):
+            result['stats']['pourc_recommandation'] = int(element.get('data-percentage'))
+
+        if element := statsBody.find('div', id='EmpStats_Approve'):
+            result['stats']['pourc_approbation'] = int(element.get('data-percentage'))
+        
+        # fondateur = statsBody.find('div', class_='donut-text d-lg-table-cell pt-sm pt-lg-0 pl-lg-sm').find('div').text.strip()
+
+        # nb_eval_fondateur_txt = statsBody.find('div', class_='numCEORatings').text
+        # nb_eval_fondateur = int(''.join(c for c in nb_eval_fondateur_txt if c.isdigit()))
 
         # Extraction des avis
 
@@ -108,9 +98,8 @@ def parse_html_glassdoor_avis(file_path:str) -> dict:
             review_data['note'] = float(review.find('span', class_='value-title').get('title'))
             review_data['titre'] = review.find('a', class_='reviewLink').find('span').text.strip()[2:-2]
 
-            description_employe = review.find('span', class_='authorJobTitle middle reviewer').text.split('-')
-            review_data['employe_status'] = description_employe[0].strip()
-            review_data['employe_poste'] = description_employe[1].strip()
+            description_employe = review.find('span', class_='authorJobTitle middle reviewer').text
+            review_data['description_employe'] = description_employe.strip()
 
 
             review_data['recommandations'] = defaultdict(list) 
@@ -179,6 +168,6 @@ def json_avis_glassdoor(context):
 
     for file_path in file_path_list:
         result = parse_html_glassdoor_avis(file_path)
-        file_name = file_path[:-5]
-        with open(f"{output_folder}/{file_name}.json", "w") as outfile:
-            json.dump(result, outfile, indent=4)
+        # file_name = file_path[:-5]
+        # with open(f"{output_folder}/{file_name}.json", "w") as outfile:
+        #     json.dump(result, outfile, indent=4)
