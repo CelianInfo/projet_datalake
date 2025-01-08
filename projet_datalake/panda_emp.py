@@ -2,10 +2,8 @@ import os
 import json
 import pandas as pd
 
-# Définir le chemin du répertoire contenant les fichiers JSON
 directory_path = r"C:\Users\eelmakoul\Documents\GitHub\projet_datalake\TD_DATALAKE\DATALAKE\2_CURATED_ZONE\LINKEDIN\EMP"
 
-# Liste pour stocker les DataFrames de chaque fichier JSON
 dataframes = []
 
 # Parcourir tous les fichiers du répertoire
@@ -13,7 +11,6 @@ for filename in os.listdir(directory_path):
     if filename.endswith(".json"):
         file_path = os.path.join(directory_path, filename)
            
-        # Ouvrir et charger le fichier JSON
         with open(file_path, "r", encoding="utf-8") as f:
             json_data = json.load(f)
             
