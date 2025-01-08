@@ -289,3 +289,13 @@ def json_emplois_linkedin(context):
             json.dump(result, outfile, indent=4)
     
     return None
+
+@asset
+def create_metadata_table():
+    # Créer la table sous duckdb
+    pass
+
+
+@asset(deps=[json_avis_glassdoor, create_metadata_table])
+def metadata_glassdoor():
+    pass
