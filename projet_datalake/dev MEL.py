@@ -23,7 +23,7 @@ def parse_html_linkedin_offers(file_path):
         
         topcard_flavor = topcard.find_all('h3', class_='topcard__flavor-row')
 
-        if posted_time := topcard_flavor.find('span', class_='num-applicants__caption'):
+        if posted_time := topcard_flavor.find('span', class_='topcard__flavor--metadata posted-time-ago__text'):
             result['EMP']['posted_time'] = posted_time.text.strip()
 
         if num_applicants := topcard_flavor.find('figcaption', class_='num-applicants__caption'):
