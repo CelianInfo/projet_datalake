@@ -7,7 +7,7 @@ file_path = "C:/Users/ctoureille/Desktop/projet_datalake/TD_DATALAKE/DATALAKE/1_
 
 def parse_html_linkedin_offers(file_path):
 
-    result = {'EMP': dict(), 'stats': dict(), 'avis': list(), 'description': '', 'job_criteria': dict()}
+    result = {'EMP': dict(), 'description': '', 'job_criteria': dict()}
 
     with open(file_path, 'r', encoding='utf-8') as html_file:
         soup = BeautifulSoup(html_file, 'html.parser')
