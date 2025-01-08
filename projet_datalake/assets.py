@@ -5,6 +5,16 @@ from bs4 import BeautifulSoup
 from collections import defaultdict
 import json
 
+import hashlib
+
+def hash_values_sha256(*args):
+    # Convertit les valeurs en bytes pour le hachage
+    values_bytes = str(args).encode('utf-8')
+    # Crée un objet de hachage SHA-256
+    m = hashlib.sha256()
+    m.update(values_bytes)
+    return m.hexdigest()
+
 @op
 def list_files_in_folder(folder_path: str) -> list[str]:
     """
@@ -39,55 +49,31 @@ def copy_file(file_path, destination_folder):
         shutil.copy(file_path, destination_folder)
 
 @op
-def parse_html_glassdoor_avis(file_path:str) -> dict:
-    result = {'id_societe':'','societe':dict(),'stats':dict(),'avis':list()}
+def parse_html_glassdoor_avis(file_path:str) -> list[dict]:
+    result = [] # contient une liste d'avis
 
     with open(file_path, 'r', encoding='utf-8') as html_file:
         soup = BeautifulSoup(html_file, 'html.parser')
 
         file_name = file_path[:-5].split('\\')[-1]
-
-        result['id_societe'] = file_name.replace('_','-').split('-')[-2]
+        id_societe = file_name.replace('_','-').split('-')[-2]
 
         # Extraction du haut de page
 
-        result['societe']['nom'] = soup.find('div', class_='header cell info').text
-
-        compagnieHeader = soup.find('div', id='EIProductHeaders')
-
-        parse_element = lambda element: element.find('span', class_='num h2').text.strip()
-
-        if element := compagnieHeader.find('a', class_='eiCell cell reviews active'):
-            result['societe']['nb_avis'] = parse_element(element)
-        
-        if element := compagnieHeader.find('a', class_='eiCell cell jobs'):
-            result['societe']['nb_emplois'] = parse_element(element)
-        
-        if element := compagnieHeader.find('a', class_='eiCell cell salaries'):
-            result['societe']['nb_salaires'] = parse_element(element)
-        
-        if element := compagnieHeader.find('a', class_='eiCell cell interviews'):
-            result['societe']['nb_entretiens'] = parse_element(element)
-        
-        if element := compagnieHeader.find('a', class_='eiCell cell benefits'):
-            result['societe']['nb_avantages'] = parse_element(element)
-        
-        if element := compagnieHeader.find('a', class_='eiCell cell photos'):
-            result['societe']['nb_photos'] = parse_element(element)
-        
+        # result['nom'] = soup.find('div', class_='header cell info').text   
 
         # Extraction du tableau des notations utilisateurs
 
-        statsBody = soup.find('div', class_='empStatsBody')
+        # statsBody = soup.find('div', class_='empStatsBody')
 
-        if element := statsBody.find('div', class_='v2__EIReviewsRatingsStylesV2__ratingNum v2__EIReviewsRatingsStylesV2__large'):
-            result['stats']['notation_employes'] = float(element.text)
+        # if element := statsBody.find('div', class_='v2__EIReviewsRatingsStylesV2__ratingNum v2__EIReviewsRatingsStylesV2__large'):
+        #     result['stats']['notation_employes'] = float(element.text)
 
-        if element := statsBody.find('div', id='EmpStats_Recommend'):
-            result['stats']['pourc_recommandation'] = int(element.get('data-percentage'))
+        # if element := statsBody.find('div', id='EmpStats_Recommend'):
+        #     result['stats']['pourc_recommandation'] = int(element.get('data-percentage'))
 
-        if element := statsBody.find('div', id='EmpStats_Approve'):
-            result['stats']['pourc_approbation'] = int(element.get('data-percentage'))
+        # if element := statsBody.find('div', id='EmpStats_Approve'):
+        #     result['stats']['pourc_approbation'] = int(element.get('data-percentage'))
         
         # fondateur = statsBody.find('div', class_='donut-text d-lg-table-cell pt-sm pt-lg-0 pl-lg-sm').find('div').text.strip()
 
@@ -98,9 +84,12 @@ def parse_html_glassdoor_avis(file_path:str) -> dict:
 
         employeeReviews = soup.findAll('li', class_='empReview')
 
-        reviews_data = result['avis']
         for review in employeeReviews:
             review_data = {}
+
+            review_data['object'] = 'avis_glassdoor'
+
+            review_data['id_societe'] = id_societe
 
             review_data['note'] = float(review.find('span', class_='value-title').get('title'))
             review_data['titre'] = review.find('a', class_='reviewLink').find('span').text.strip()[2:-2]
@@ -108,22 +97,35 @@ def parse_html_glassdoor_avis(file_path:str) -> dict:
             description_employe = review.find('span', class_='authorJobTitle middle reviewer').text
             review_data['description_employe'] = description_employe.strip()
 
-
-            review_data['recommandations'] = defaultdict(list) 
             if review.find('div', class_='row reviewBodyCell recommends'):
                 for color in ('green', 'yellow', 'red'):
+                    review_data[f'{color}_recommandations'] = []
                     for element in review.find('div', class_='row reviewBodyCell recommends').findAll('i', class_=color):
-                        review_data['recommandations'][color].append(element.parent.find('span').text)
+                        review_data[f'{color}_recommandations'].append(element.parent.find('span').text)
 
             review_data['anciennete'] = review.find('p', class_='mainText').text
 
-            review_data['review_body'] = defaultdict(list) 
+            review_data['Avantages'] = ""
+            review_data['Inconvenients'] = ""
+            review_data['Conseils a la direction'] = ""
+
             if review.find('div', class_='mt-md'):
                 for review_element in review.findAll('div', class_='mt-md'):
                     element = review_element.findAll('p')
-                    review_data['review_body'][element[0].text] = element[1].text
+
+                    dict_review_element = {
+                        'Avantages':'Avantages',
+                        'Inconv\u00e9nients':'Inconvenients',
+                        'Conseils \u00e0 la direction':'Conseils a la direction'
+                    }
+
+                    review_key = dict_review_element[element[0].text]
+
+                    review_data[review_key] = element[1].text
+
+            review_data['unique_key'] = hash_values_sha256(review_data['id_societe'],review_data['note'],review_data['titre'])
         
-            reviews_data.append(review_data)
+            result.append(review_data)
 
     return result
 
