@@ -7,7 +7,7 @@ file_path = "C:/Users/ctoureille/Desktop/projet_datalake/TD_DATALAKE/DATALAKE/1_
 
 def parse_html_linkedin_offers(file_path):
 
-    result = {'EMP': dict(), 'stats': dict(), 'avis': list(), 'description': '', 'job_criteria': dict()}
+    result = {'EMP': dict(), 'description': '', 'job_criteria': dict()}
 
     with open(file_path, 'r', encoding='utf-8') as html_file:
         soup = BeautifulSoup(html_file, 'html.parser')
@@ -23,7 +23,7 @@ def parse_html_linkedin_offers(file_path):
         
         topcard_flavor = topcard.find_all('h3', class_='topcard__flavor-row')
 
-        if posted_time := topcard_flavor.find('span', class_='num-applicants__caption'):
+        if posted_time := topcard_flavor.find('span', class_='topcard__flavor--metadata posted-time-ago__text'):
             result['EMP']['posted_time'] = posted_time.text.strip()
 
         if num_applicants := topcard_flavor.find('figcaption', class_='num-applicants__caption'):
@@ -36,7 +36,7 @@ def parse_html_linkedin_offers(file_path):
         # Extraire la déscription
         description_section = soup.find('section', class_='description')
         if description_section:
-            result['description'] = description_section.find('div', class_='description__text description__text--rich').text.strip()  
+            result['description'] = dlescription_section.find('div', class_='description__text description__text--rich').text.strip()  
 
         # Extraire les critéres de l'offers
         job_criteria_section = soup.find('ul', class_='job-criteria__list')

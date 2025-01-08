@@ -133,40 +133,18 @@ def parse_html_glassdoor_avis(file_path:str) -> list[dict]:
 def parse_html_glassdoor_societe(file_path):
     with open(file_path, 'r', encoding='utf-8') as html_file:
         soup = BeautifulSoup(html_file, 'html.parser')
-
-        result = {}
-
-        compagnieHeader = soup.find('div', id='EIProductHeaders')
-
-        parse_element = lambda element: element.find('span', class_='num h2').text.strip()
-
-        if element := compagnieHeader.find('a', class_='eiCell cell reviews active'):
-            result['nb_avis'] = parse_element(element)
-        
-        if element := compagnieHeader.find('a', class_='eiCell cell jobs'):
-            result['nb_emplois'] = parse_element(element)
-        
-        if element := compagnieHeader.find('a', class_='eiCell cell salaries'):
-            result['nb_salaires'] = parse_element(element)
-        
-        if element := compagnieHeader.find('a', class_='eiCell cell interviews'):
-            result['nb_entretiens'] = parse_element(element)
-        
-        if element := compagnieHeader.find('a', class_='eiCell cell benefits'):
-            result['nb_avantages'] = parse_element(element)
-        
-        if element := compagnieHeader.find('a', class_='eiCell cell photos'):
-            result['nb_photos'] = parse_element(element)
         
     # Initialisation du dictionnaire pour stocker les résultats
         presentation = soup.find('div', id='EmpBasicInfo')
 
         presentation_elements = presentation.findAll('div', class_='infoEntity')
 
+        result = {}
+
         file_name = file_path[:-5].split('\\')[-1]
         result['id_societe'] = file_name.replace('_','-').split('-')[-2]
 
-
+        
         for element in presentation_elements:
             element_label = element.find('label').text.strip()
             element_valeur = element.find('span').text.strip()
@@ -178,7 +156,7 @@ def parse_html_glassdoor_societe(file_path):
 @op
 def parse_html_linkedin_offers(file_path):
 
-    result = {'EMP': dict(), 'stats': dict(), 'avis': list(), 'description': '', 'job_criteria': dict()}
+    result = {'EMP': dict(), 'description': '', 'job_criteria': dict()}
 
     with open(file_path, 'r', encoding='utf-8') as html_file:
         soup = BeautifulSoup(html_file, 'html.parser')
@@ -198,7 +176,7 @@ def parse_html_linkedin_offers(file_path):
         if location := topcard.find('span', class_='topcard__flavor--bullet'):
             result['EMP']['location'] = location.text.strip()  
 
-        if posted_time := topcard.find('span', class_='num-applicants__caption'):
+        if posted_time := topcard.find('span', class_='topcard__flavor--metadata posted-time-ago__text'):
             result['EMP']['posted_time'] = posted_time.text.strip()
 
         if num_applicants := topcard.find('figcaption', class_='num-applicants__caption'):
