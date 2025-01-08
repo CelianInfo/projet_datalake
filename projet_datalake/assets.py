@@ -142,28 +142,68 @@ def parse_html_glassdoor_societe(file_path):
     
     return result
 
-@asset
-def html_files_to_process(context):
-    """
-    Lists all files in the source folder.
+@op
+def parse_html_linkedin_offers(file_path):
 
-    This asset represents the list of files that need to be processed.
-    """
-    current_dir = os.path.dirname(__file__) 
-    source_folder = os.path.join(current_dir, '..','TD_DATALAKE','DATALAKE','0_SOURCE_WEB')
-    return list_files_in_folder(source_folder)
+    result = {'EMP': dict(), 'stats': dict(), 'avis': list(), 'description': '', 'job_criteria': dict()}
+
+    with open(file_path, 'r', encoding='utf-8') as html_file:
+        soup = BeautifulSoup(html_file, 'html.parser')
+
+        # Extraire les détails
+        topcard = soup.find('section', class_='topcard')
+
+        if nom := topcard.find('a', class_='topcard__logo-container'):
+            result['EMP']['nom'] = nom.text.strip()   
+        
+        if poste := topcard.find('h1', class_='topcard__title'):
+            result['EMP']['poste'] = poste.text.strip()  
+        
+        if location := topcard.find('span', class_='topcard__flavor--bullet'):
+            result['EMP']['location'] = location.text.strip()  
+
+        if posted_time := topcard.find('span', class_='num-applicants__caption'):
+            result['EMP']['posted_time'] = posted_time.text.strip()
+
+        if num_applicants := topcard.find('figcaption', class_='num-applicants__caption'):
+            result['EMP']['num_applicants'] = num_applicants.text.strip()  
+
+        if apply_link := topcard.find('a', class_='apply-button apply-button--link'):
+            result['EMP']['apply_link'] = apply_link.get('href')
+
+        # Extraire la déscription
+        description_section = soup.find('section', class_='description')
+        if description_section:
+            result['description'] = description_section.find('div', class_='description__text description__text--rich').text.strip()  
+
+        # Extraire les critéres de l'offers
+        job_criteria_section = soup.find('ul', class_='job-criteria__list')
+        job_criteria = {}
+
+        if job_criteria_section:
+            criteria_items = job_criteria_section.find_all('li', class_='job-criteria__item')
+            for item in criteria_items:
+                subheader = item.find('h3', class_='job-criteria__subheader').text.strip()
+                criteria_text = [span.text.strip() for span in item.find_all('span', class_='job-criteria__text job-criteria__text--criteria')]
+                job_criteria[subheader] = criteria_text
+
+        result['job_criteria'] = job_criteria
+
+        return result
 
 @asset
-def processed_html_files(context, html_files_to_process):
+def processed_html_files(context):
     """
     Processes files based on their name.
 
     This asset copies files to different destination folders based on their names.
     """
     current_dir = os.path.dirname(__file__) 
+    source_folder = os.path.join(current_dir,'..','TD_DATALAKE','DATALAKE','0_SOURCE_WEB')
+
+    html_files_to_process = list_files_in_folder(source_folder)
+
     generic_path = os.path.join(current_dir, '..','TD_DATALAKE','DATALAKE','1_LANDING_ZONE')
-
-
 
     for file_path in html_files_to_process:
         if "GLASSDOOR" in file_path:
@@ -208,6 +248,25 @@ def json_societe_glassdoor(context):
 
     for file_path in file_path_list:
         result = parse_html_glassdoor_societe(file_path)
+        file_name = file_path[:-5].split('\\')[-1]
+
+        output_file_path = os.path.join(output_folder, f"{file_name}.json")
+
+        with open(output_file_path, "w") as outfile:
+            json.dump(result, outfile, indent=4)
+    
+    return None
+
+@asset(deps=[processed_html_files])
+def json_emplois_linkedin(context):
+    current_dir = os.path.dirname(__file__) 
+    source_folder = os.path.join(current_dir, '..','TD_DATALAKE','DATALAKE','1_LANDING_ZONE','LINKEDIN','EMP')
+    output_folder = os.path.join(current_dir, '..','TD_DATALAKE','DATALAKE','2_CURATED_ZONE','LINKEDIN','EMP')
+
+    file_path_list = list_files_in_folder(source_folder)
+
+    for file_path in file_path_list:
+        result = parse_html_linkedin_offers(file_path)
         file_name = file_path[:-5].split('\\')[-1]
 
         output_file_path = os.path.join(output_folder, f"{file_name}.json")

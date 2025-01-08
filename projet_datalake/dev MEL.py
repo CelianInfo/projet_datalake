@@ -22,8 +22,12 @@ def parse_html_linkedin_offers(file_path):
 
         
         topcard_flavor = topcard.find_all('h3', class_='topcard__flavor-row')
-        result['EMP']['posted_time'] = topcard_flavor[1].find('span', class_='topcard__flavor--metadata').text.strip()  
-        result['EMP']['num_applicants'] = topcard_flavor[1].find('figcaption', class_='num-applicants__caption').text.strip()  
+
+        if posted_time := topcard_flavor.find('span', class_='num-applicants__caption'):
+            result['EMP']['posted_time'] = posted_time.text.strip()
+
+        if num_applicants := topcard_flavor.find('figcaption', class_='num-applicants__caption'):
+            result['EMP']['num_applicants'] = num_applicants.text.strip()  
 
         # lien de l'offer
         apply_link = topcard.find('div', class_='topcard__content-right').find('a', class_='apply-button--link')['href']
