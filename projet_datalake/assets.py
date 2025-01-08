@@ -40,10 +40,14 @@ def copy_file(file_path, destination_folder):
 
 @op
 def parse_html_glassdoor_avis(file_path:str) -> dict:
-    result = {'societe':dict(),'stats':dict(),'avis':list()}
+    result = {'id_societe':'','societe':dict(),'stats':dict(),'avis':list()}
 
     with open(file_path, 'r', encoding='utf-8') as html_file:
         soup = BeautifulSoup(html_file, 'html.parser')
+
+        file_name = file_path[:-5].split('\\')[-1]
+
+        result['id_societe'] = file_name.replace('_','-').split('-')[-2]
 
         # Extraction du haut de page
 
@@ -134,6 +138,11 @@ def parse_html_glassdoor_societe(file_path):
         presentation_elements = presentation.findAll('div', class_='infoEntity')
 
         result = {}
+
+        file_name = file_path[:-5].split('\\')[-1]
+        result['id_societe'] = file_name.replace('_','-').split('-')[-2]
+
+        
         for element in presentation_elements:
             element_label = element.find('label').text.strip()
             element_valeur = element.find('span').text.strip()
@@ -152,6 +161,9 @@ def parse_html_linkedin_offers(file_path):
 
         # Extraire les détails
         topcard = soup.find('section', class_='topcard')
+
+        if entreprise := topcard.find('a', class_='topcard__org-name-link'):
+            result['EMP']['entreprise'] = entreprise.text.strip()   
 
         if nom := topcard.find('a', class_='topcard__logo-container'):
             result['EMP']['nom'] = nom.text.strip()   
