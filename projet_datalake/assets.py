@@ -1,9 +1,10 @@
-from dagster import asset, op, Output, OpExecutionContext
+from dagster import asset, op, Output, OpExecutionContext, AssetSpec, multi_asset
 import os
 import shutil
 from bs4 import BeautifulSoup
 from collections import defaultdict
 import json
+import pandas as pd
 
 import hashlib
 
@@ -28,7 +29,8 @@ def list_files_in_folder(folder_path: str) -> list[str]:
         A list of file paths.
     """
     files = os.listdir(folder_path)
-    file_paths = [os.path.join(folder_path, file) for file in files]
+    file_paths = [os.path.join(folder_path, file) for file in files if '.gitkeep' not in file]
+
     return file_paths
 
 @op
@@ -82,6 +84,7 @@ def parse_html_glassdoor_avis(file_path:str) -> list[dict]:
                 for color in ('green', 'yellow', 'red'):
                     for element in review.find('div', class_='row reviewBodyCell recommends').findAll('i', class_=color):
                         review_data['contenu'].append({
+                            'parent_id':review_data['unique_key'],
                             'type':'recommandation',
                             'element':color,
                             'value':element.parent.find('span').text
@@ -98,6 +101,7 @@ def parse_html_glassdoor_avis(file_path:str) -> list[dict]:
                     }
 
                     review_data['contenu'].append({
+                            'parent_id':review_data['unique_key'],
                             'type':'paragraphe',
                             'element': dict_review_element[element[0].text],
                             'value':element[1].text
@@ -266,6 +270,43 @@ def json_emplois_linkedin(context):
             json.dump(result, outfile, indent=4)
     
     return None
+
+@multi_asset(specs=[
+    AssetSpec("avis_glassdoor", deps=[json_avis_glassdoor]), 
+    AssetSpec("avis_glassdoor_contenu",deps=[json_avis_glassdoor])
+])
+def tables_avis_glassdoor(context):
+
+    current_dir = os.path.dirname(__file__) 
+    source_folder = os.path.join(current_dir, '..','TD_DATALAKE','DATALAKE','2_CURATED_ZONE','LINKEDIN','EMP')
+
+    file_path_list = list_files_in_folder(source_folder)
+
+    liste_avis = []
+    liste_contenu_avis = []
+
+    for file_path in file_path_list:
+
+        with open(file_path, 'r') as f:
+            liste_avis_glassdoor = json.load(f)
+
+        for avis_glassdoor in liste_avis_glassdoor:
+
+            print(avis_glassdoor)
+            # avis = json.load(avis_glassdoor)
+
+            # list_contenu_avis_glassdoor = avis.pop('contenu')
+
+            # liste_avis.append(avis)
+
+            # for contenu_avis in list_contenu_avis_glassdoor:
+            #     liste_contenu_avis.append(contenu_avis)
+
+    df_avis = pd.json_normalize(liste_avis)
+    df_contenu_avis = pd.json_normalize(liste_contenu_avis)
+
+    return df_avis, df_contenu_avis
+
 
 # @asset
 # def create_metadata_table():
