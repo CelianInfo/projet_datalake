@@ -14,8 +14,6 @@ def parse_html_linkedin_offers(file_path):
 
         # Extraire les détails
         topcard = soup.find('section', class_='topcard')
-
-        result['EMP']['nom'] = topcard.find('a', class_='topcard__logo-container').text.strip()   
         
         result['EMP']['poste'] = topcard.find('h1', class_='topcard__title').text.strip()  
         result['EMP']['location'] = topcard.find('span', class_='topcard__flavor--bullet').text.strip()  

@@ -145,8 +145,7 @@ def parse_html_linkedin_offers(file_path):
         if entreprise := topcard.find('a', class_='topcard__org-name-link'):
             result['EMP']['entreprise'] = entreprise.text.strip()   
 
-        if nom := topcard.find('a', class_='topcard__logo-container'):
-            result['EMP']['nom'] = nom.text.strip()   
+    
         
         if poste := topcard.find('h1', class_='topcard__title'):
             result['EMP']['poste'] = poste.text.strip()  
