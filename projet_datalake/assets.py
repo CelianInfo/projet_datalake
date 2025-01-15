@@ -50,64 +50,42 @@ def copy_file(file_path, destination_folder):
 
 @op
 def parse_html_glassdoor_avis(file_path:str) -> list[dict]:
-    result = [] # contient une liste d'avis
 
     with open(file_path, 'r', encoding='utf-8') as html_file:
         soup = BeautifulSoup(html_file, 'html.parser')
 
         file_name = file_path[:-5].split('\\')[-1]
-        id_societe = file_name.replace('_','-').split('-')[-2]
+        id_entreprise = file_name.replace('_','-').split('-')[-2]
 
-        # Extraction du haut de page
-
-        # result['nom'] = soup.find('div', class_='header cell info').text   
-
-        # Extraction du tableau des notations utilisateurs
-
-        # statsBody = soup.find('div', class_='empStatsBody')
-
-        # if element := statsBody.find('div', class_='v2__EIReviewsRatingsStylesV2__ratingNum v2__EIReviewsRatingsStylesV2__large'):
-        #     result['stats']['notation_employes'] = float(element.text)
-
-        # if element := statsBody.find('div', id='EmpStats_Recommend'):
-        #     result['stats']['pourc_recommandation'] = int(element.get('data-percentage'))
-
-        # if element := statsBody.find('div', id='EmpStats_Approve'):
-        #     result['stats']['pourc_approbation'] = int(element.get('data-percentage'))
-        
-        # fondateur = statsBody.find('div', class_='donut-text d-lg-table-cell pt-sm pt-lg-0 pl-lg-sm').find('div').text.strip()
-
-        # nb_eval_fondateur_txt = statsBody.find('div', class_='numCEORatings').text
-        # nb_eval_fondateur = int(''.join(c for c in nb_eval_fondateur_txt if c.isdigit()))
+        nom_entreprise = soup.find('div', class_='header cell info').text 
 
         # Extraction des avis
-
         employeeReviews = soup.findAll('li', class_='empReview')
 
+        result = [] # contient une liste d'avis
         for review in employeeReviews:
             review_data = {}
 
-            review_data['object'] = 'avis_glassdoor'
-
-            review_data['id_societe'] = id_societe
-
+            review_data['origine'] = 'avis_glassdoor'
+            review_data['id_entreprise'] = id_entreprise
+            review_data['nom_entreprise'] = nom_entreprise
             review_data['note'] = float(review.find('span', class_='value-title').get('title'))
             review_data['titre'] = review.find('a', class_='reviewLink').find('span').text.strip()[2:-2]
+            review_data['description_employe'] = review.find('span', class_='authorJobTitle middle reviewer').text.strip()
+            review_data['anciennete_employe'] = review.find('p', class_='mainText').text
 
-            description_employe = review.find('span', class_='authorJobTitle middle reviewer').text
-            review_data['description_employe'] = description_employe.strip()
+            review_data['unique_key'] = hash_values_sha256(review_data['id_entreprise'],review_data['note'],review_data['titre'])
+
+            review_data['contenu'] = []
 
             if review.find('div', class_='row reviewBodyCell recommends'):
                 for color in ('green', 'yellow', 'red'):
-                    review_data[f'{color}_recommandations'] = []
                     for element in review.find('div', class_='row reviewBodyCell recommends').findAll('i', class_=color):
-                        review_data[f'{color}_recommandations'].append(element.parent.find('span').text)
-
-            review_data['anciennete'] = review.find('p', class_='mainText').text
-
-            review_data['Avantages'] = ""
-            review_data['Inconvenients'] = ""
-            review_data['Conseils a la direction'] = ""
+                        review_data['contenu'].append({
+                            'type':'recommandation',
+                            'element':color,
+                            'value':element.parent.find('span').text
+                        })
 
             if review.find('div', class_='mt-md'):
                 for review_element in review.findAll('div', class_='mt-md'):
@@ -119,12 +97,12 @@ def parse_html_glassdoor_avis(file_path:str) -> list[dict]:
                         'Conseils \u00e0 la direction':'Conseils a la direction'
                     }
 
-                    review_key = dict_review_element[element[0].text]
+                    review_data['contenu'].append({
+                            'type':'paragraphe',
+                            'element': dict_review_element[element[0].text],
+                            'value':element[1].text
+                        })
 
-                    review_data[review_key] = element[1].text
-
-            review_data['unique_key'] = hash_values_sha256(review_data['id_societe'],review_data['note'],review_data['titre'])
-        
             result.append(review_data)
 
     return result
@@ -142,7 +120,7 @@ def parse_html_glassdoor_societe(file_path):
         result = {}
 
         file_name = file_path[:-5].split('\\')[-1]
-        result['id_societe'] = file_name.replace('_','-').split('-')[-2]
+        result['id_entreprise'] = file_name.replace('_','-').split('-')[-2]
 
         
         for element in presentation_elements:
@@ -185,7 +163,7 @@ def parse_html_linkedin_offers(file_path):
         if apply_link := topcard.find('a', class_='apply-button apply-button--link'):
             result['EMP']['apply_link'] = apply_link.get('href')
 
-        # Extraire la déscription
+        # Extraire la description
         description_section = soup.find('section', class_='description')
         if description_section:
             result['description'] = description_section.find('div', class_='description__text description__text--rich').text.strip()  
@@ -290,12 +268,12 @@ def json_emplois_linkedin(context):
     
     return None
 
-@asset
-def create_metadata_table():
-    # Créer la table sous duckdb
-    pass
+# @asset
+# def create_metadata_table():
+#     # Créer la table sous duckdb
+#     pass
 
 
-@asset(deps=[json_avis_glassdoor, create_metadata_table])
-def metadata_glassdoor():
-    pass
+# @asset(deps=[json_avis_glassdoor, create_metadata_table])
+# def metadata_glassdoor():
+#     pass

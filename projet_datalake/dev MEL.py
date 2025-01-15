@@ -36,7 +36,7 @@ def parse_html_linkedin_offers(file_path):
         # Extraire la déscription
         description_section = soup.find('section', class_='description')
         if description_section:
-            result['description'] = dlescription_section.find('div', class_='description__text description__text--rich').text.strip()  
+            result['description'] = description_section.find('div', class_='description__text description__text--rich').text.strip()  
 
         # Extraire les critéres de l'offers
         job_criteria_section = soup.find('ul', class_='job-criteria__list')

@@ -1,8 +1,9 @@
 import os
 import json
 import pandas as pd
+from pandasgui import show
 
-directory_path = r"C:\Users\eelmakoul\Documents\GitHub\projet_datalake\TD_DATALAKE\DATALAKE\2_CURATED_ZONE\LINKEDIN\EMP"
+directory_path = r"C:\Users\ctoureille\Desktop\projet_datalake\TD_DATALAKE\DATALAKE\2_CURATED_ZONE\LINKEDIN\EMP"
 
 dataframes = []
 
@@ -26,6 +27,6 @@ for column in final_df.columns:
     if final_df[column].isnull().any():
         final_df[column] = final_df[column].fillna(pd.NA)
 
-print(final_df)
+show(final_df)
 
-final_df.to_csv(r"C:\Users\eelmakoul\Documents\GitHub\projet_datalake\TD_DATALAKE\DATALAKE\2_CURATED_ZONE\LINKEDIN\EMP\final_data.csv", index=False, encoding="utf-8")
+# final_df.to_csv(r"C:\Users\eelmakoul\Documents\GitHub\projet_datalake\TD_DATALAKE\DATALAKE\2_CURATED_ZONE\LINKEDIN\EMP\final_data.csv", index=False, encoding="utf-8")
