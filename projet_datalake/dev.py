@@ -1,7 +1,11 @@
-# Original string with Unicode escape sequences
-encoded_string = "Inconv\u00e9nients"
+import pandas as pd
+from pandasgui import show
 
-# Decode the string using the 'unicode-escape' codec
-decoded_string = encoded_string.encode('utf-8').decode('unicode-escape')
+import json
 
-print(decoded_string)
+file_path = r"C:\Users\538128\Desktop\github\projet_datalake\TD_DATALAKE\DATALAKE\2_CURATED_ZONE\LINKEDIN\EMP\13546-INFO-EMP-LINKEDIN-FR-1599984246.json"
+
+with open(file_path, 'r') as file:
+    data = json.load(file)
+    df_avis = pd.json_normalize(data)
+    show(df_avis)

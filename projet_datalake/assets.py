@@ -155,9 +155,7 @@ def parse_html_glassdoor_societe(file_path):
 
 @op
 def parse_html_linkedin_offers(file_path):
-
-    result = {'EMP': dict(), 'description': '', 'job_criteria': dict()}
-
+    result = {}
     with open(file_path, 'r', encoding='utf-8') as html_file:
         soup = BeautifulSoup(html_file, 'html.parser')
 
@@ -165,42 +163,37 @@ def parse_html_linkedin_offers(file_path):
         topcard = soup.find('section', class_='topcard')
 
         if entreprise := topcard.find('a', class_='topcard__org-name-link'):
-            result['EMP']['entreprise'] = entreprise.text.strip()   
+            result['Entreprise'] = entreprise.text.strip()   
 
-    
-        
         if poste := topcard.find('h1', class_='topcard__title'):
-            result['EMP']['poste'] = poste.text.strip()  
+            result['Poste'] = poste.text.strip()  
         
         if location := topcard.find('span', class_='topcard__flavor--bullet'):
-            result['EMP']['location'] = location.text.strip()  
+            result['Lieu'] = location.text.strip()  
 
         if posted_time := topcard.find('span', class_='topcard__flavor--metadata posted-time-ago__text'):
-            result['EMP']['posted_time'] = posted_time.text.strip()
+            result['Date'] = posted_time.text.strip()
 
         if num_applicants := topcard.find('figcaption', class_='num-applicants__caption'):
-            result['EMP']['num_applicants'] = num_applicants.text.strip()  
+            result['Nombre_Candidats'] = num_applicants.text.strip()  
 
         if apply_link := topcard.find('a', class_='apply-button apply-button--link'):
-            result['EMP']['apply_link'] = apply_link.get('href')
+            result['Url'] = apply_link.get('href')
 
         # Extraire la description
         description_section = soup.find('section', class_='description')
         if description_section:
-            result['description'] = description_section.find('div', class_='description__text description__text--rich').text.strip()  
+            result['Description'] = description_section.find('div', class_='description__text description__text--rich').text.strip()  
 
         # Extraire les critéres de l'offers
         job_criteria_section = soup.find('ul', class_='job-criteria__list')
-        job_criteria = {}
 
         if job_criteria_section:
             criteria_items = job_criteria_section.find_all('li', class_='job-criteria__item')
             for item in criteria_items:
                 subheader = item.find('h3', class_='job-criteria__subheader').text.strip()
                 criteria_text = [span.text.strip() for span in item.find_all('span', class_='job-criteria__text job-criteria__text--criteria')]
-                job_criteria[subheader] = criteria_text
-
-        result['job_criteria'] = job_criteria
+                result[subheader] = criteria_text
 
         return result
 
@@ -277,28 +270,6 @@ def json_emplois_linkedin(context) -> None:
         with open(output_file_path, "w", encoding='utf-8') as outfile:
             json.dump(result, outfile, ensure_ascii=False, indent=4)
 
-# @multi_asset(specs=[
-#     AssetSpec("avis_glassdoor", deps=[json_avis_glassdoor]), 
-#     AssetSpec("avis_glassdoor_contenu",deps=[json_avis_glassdoor])
-# ])
-# def tables_avis_glassdoor(context):
-
-#     current_dir = os.path.dirname(__file__) 
-#     source_folder = os.path.join(current_dir, '..','TD_DATALAKE','DATALAKE','2_CURATED_ZONE','LINKEDIN','EMP')
-
-#     file_path_list = list_files_in_folder(source_folder)
-
-#     df_avis = pd.json_normalize(liste_avis)
-
-#     return df_avis
-
-
-# @asset
-# def create_metadata_table():
-#     # Créer la table sous duckdb
-#     pass
-
-
-# @asset(deps=[json_avis_glassdoor, create_metadata_table])
-# def metadata_glassdoor():
-#     pass
+@asset(deps=[json_avis_glassdoor, json_societe_glassdoor, json_emplois_linkedin])
+def json_to_sqlite(context) -> None:
+    pass
