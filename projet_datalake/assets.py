@@ -74,7 +74,7 @@ def parse_html_glassdoor_avis(file_path:str) -> list[dict]:
                 review_date_value = review_date.get('datetime').split(' GMT')[0]
                 review_data['Date'] = datetime.strptime(review_date_value, "%a %b %d %Y %H:%M:%S").strftime("%y/%m/%d %H:%M:%S")
             review_data['Titre'] = review.find('a', class_='reviewLink').find('span').text.strip()[2:-2]
-            review_data['Note'] = float(review.find('span', class_='value-title').get('title'))
+            review_data['Note'] = review.find('span', class_='value-title').get('title')
             review_data['Description_Employe'] = review.find('span', class_='authorJobTitle middle reviewer').text.strip()
             review_data['Anciennete_Employe'] = review.find('p', class_='mainText').text
             
@@ -269,7 +269,48 @@ def json_emplois_linkedin(context) -> None:
 
         with open(output_file_path, "w", encoding='utf-8') as outfile:
             json.dump(result, outfile, ensure_ascii=False, indent=4)
+    
+@asset(deps=[json_avis_glassdoor])
+def avis_glassdoor(context):
+    current_dir = os.path.dirname(__file__) 
+    glassdoor_avis_folder = os.path.join(current_dir, '..','TD_DATALAKE','DATALAKE','2_CURATED_ZONE','GLASSDOOR','AVI')
 
-@asset(deps=[json_avis_glassdoor, json_societe_glassdoor, json_emplois_linkedin])
-def json_to_sqlite(context) -> None:
-    pass
+    glassdoor_avis_paths = [os.path.normpath(f) for f in list_files_in_folder(glassdoor_avis_folder)]
+    
+    glassdoor_avis_jsons = []
+    
+    for path in glassdoor_avis_paths:
+        with open(path, 'r', encoding='utf-8') as file:
+            glassdoor_avis_jsons.append(pd.json_normalize(json.load(file)))
+    
+    return pd.concat(glassdoor_avis_jsons, axis=0, ignore_index=True)
+
+@asset(deps=[json_societe_glassdoor])
+def societe_glassdoor(context):
+    current_dir = os.path.dirname(__file__) 
+    glassdoor_societe_folder = os.path.join(current_dir, '..','TD_DATALAKE','DATALAKE','2_CURATED_ZONE','GLASSDOOR','SOC')
+
+    glassdoor_societe_paths = [os.path.normpath(f) for f in list_files_in_folder(glassdoor_societe_folder)]
+    
+    glassdoor_societe_jsons = []
+    
+    for path in glassdoor_societe_paths:
+        with open(path, 'r', encoding='utf-8') as file:
+            glassdoor_societe_jsons.append(pd.json_normalize(json.load(file)))
+    
+    return pd.concat(glassdoor_societe_jsons, axis=0, ignore_index=True)
+
+@asset(deps=[json_emplois_linkedin])
+def emplois_linkedin(context):
+    current_dir = os.path.dirname(__file__) 
+    linkedin_emplois_folder = os.path.join(current_dir, '..','TD_DATALAKE','DATALAKE','2_CURATED_ZONE','LINKEDIN','EMP')
+
+    linkedin_emplois_paths = [os.path.normpath(f) for f in list_files_in_folder(linkedin_emplois_folder)]
+    
+    linkedin_emplois_jsons = []
+    
+    for path in linkedin_emplois_paths:
+        with open(path, 'r', encoding='utf-8') as file:
+            linkedin_emplois_jsons.append(pd.json_normalize(json.load(file)))
+    
+    return pd.concat(linkedin_emplois_jsons, axis=0, ignore_index=True)

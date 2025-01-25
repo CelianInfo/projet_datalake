@@ -2,6 +2,7 @@
 TD_DATALAKE/DATALAKE/1_LANDING_ZONE/**/*.html
 tmp*/
 TD_DATALAKE/DATALAKE/2_CURATED_ZONE/**/*.json
+TD_DATALAKE/DATALAKE/3_PRODUCTION_ZONE/database.duckdb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

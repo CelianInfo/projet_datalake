@@ -10,8 +10,6 @@ all_assets = load_assets_from_modules([assets])
 defs = Definitions(
     assets=all_assets,
     resources={
-        "io_manager": DuckDBPandasIOManager(
-            database="database.duckdb"
-        )
+        "io_manager": DuckDBPandasIOManager(database="TD_DATALAKE/DATALAKE/3_PRODUCTION_ZONE/database.duckdb")
     },
 )
