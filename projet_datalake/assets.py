@@ -4,7 +4,7 @@ from datetime import datetime
 
 from concurrent.futures import ThreadPoolExecutor
 
-from dagster import asset, op, Output, OpExecutionContext, AssetSpec, multi_asset, get_dagster_logger
+from dagster import asset, op, Output, OpExecutionContext, AssetSpec, multi_asset, get_dagster_logger, AssetIn, MaterializeResult, AssetOut
 from bs4 import BeautifulSoup
 
 @op
@@ -314,3 +314,82 @@ def emplois_linkedin(context):
             linkedin_emplois_jsons.append(pd.json_normalize(json.load(file)))
     
     return pd.concat(linkedin_emplois_jsons, axis=0, ignore_index=True)
+
+
+@op
+def bind_dataframes(df1, df2, df1_columns, df2_columns, id_column_name):
+    """
+    Binds two dataframes based on the specified columns and returns the modified dataframes.
+
+    Parameters:
+    df1 (pd.DataFrame): The first dataframe.
+    df2 (pd.DataFrame): The second dataframe.
+    df1_columns (list): The columns in df1 to merge on.
+    df2_columns (list): The columns in df2 to merge on.
+    id_column_name (str): The name of the id column to be added.
+
+    Returns:
+    pd.DataFrame: The modified first dataframe.
+    pd.DataFrame: The modified second dataframe.
+    """
+    # Add an id column to the second dataframe
+    df2[id_column_name] = range(1, len(df2) + 1)
+
+    # Merge the first dataframe with the second dataframe on the specified columns
+    df1_merged = df1.merge(df2, left_on=df1_columns, right_on=df2_columns, how='left')
+
+    # Select the required columns for the first dataframe
+    df1_result = df1_merged[df1.columns.tolist() + [id_column_name]]
+
+    # Select the required columns for the second dataframe
+    df2_result = df2[[id_column_name] + df2_columns]
+
+    return df1_result, df2_result
+
+@asset(ins={"entreprise": AssetIn(key="societe_glassdoor")})
+def dim_entreprise(entreprise: pd.DataFrame)-> pd.DataFrame:
+    
+    entreprise.columns = ['ID_Entreprise','Nom_Entreprise','Description','Site_Web','Siege_Social','Taille','Annee_Fondation','Type_Entreprise','Secteur','Revenu','Groupe','Nouveau_Nom_Entreprise']
+    
+    # Remplace le nom de l'entreprise par le nouveau quand disponible
+    entreprise['Nom_Entreprise'] =  entreprise['Nouveau_Nom_Entreprise'].where(entreprise['Nouveau_Nom_Entreprise'].notna(), entreprise['Nom_Entreprise'])
+    
+    entreprise['Annee_Fondation'] = entreprise['Annee_Fondation'].str.replace('Inconnue','')
+    
+    # Suppression Groupe et Nouveau_Nom_Entreprise + Réorganisation colonnes
+    return entreprise[['ID_Entreprise','Nom_Entreprise','Description','Site_Web','Siege_Social','Taille','Revenu','Annee_Fondation','Type_Entreprise','Secteur']]
+
+@multi_asset(
+            outs={
+                'fait_avis_glassdoor' : AssetOut(),
+                'jk_status_employe' : AssetOut(),
+                'dim_texte_avis' : AssetOut(),
+                'jk_recommandations' : AssetOut()
+            },
+            ins={"avis_glassdoor": AssetIn(key="avis_glassdoor")})
+def assets_avis_glassdoor(context: OpExecutionContext, avis_glassdoor: pd.DataFrame):
+        
+    avis_glassdoor.columns = ['Origine','Id_Entreprise','Nom_Entreprise','Date_Timestamp','Titre','Note','Description_Employe','Anciennete_Employe','Recommandation','Point_De_Vue','Approbation_PDG','Avantages','Inconvenients','Conseils_Direction']
+        
+    # Sortir l'avis quand a date n'est pas renseignée (1 dans notre cas)
+    avis_glassdoor = avis_glassdoor.dropna(subset=['Date_Timestamp'])
+    
+    avis_glassdoor['ID_Date_Publication'] = avis_glassdoor['Date_Timestamp'].str.split(' ').apply(lambda x: x[0])
+    avis_glassdoor['Heure_Publication'] = avis_glassdoor['Date_Timestamp'].str.split(' ').apply(lambda x: x[1])
+    
+    dim_columns = ['Description_Employe','Anciennete_Employe']
+    dim_infos_employe = avis_glassdoor[dim_columns]
+    avis_glassdoor, dim_infos_employe = bind_dataframes(avis_glassdoor, dim_infos_employe, dim_columns, dim_columns, 'ID_Infos_Employe')
+    
+    dim_columns = ['Avantages','Inconvenients','Conseils_Direction']
+    dim_texte_avis = avis_glassdoor[dim_columns].drop_duplicates()
+    avis_glassdoor, dim_texte_avis = bind_dataframes(avis_glassdoor, dim_texte_avis, dim_columns, dim_columns, 'ID_Texte_Recommandation')
+    
+    jk_columns = ['Recommandation','Point_De_Vue','Approbation_PDG']
+    junk_recommandations = avis_glassdoor[jk_columns].drop_duplicates()
+    avis_glassdoor, junk_recommandations = bind_dataframes(avis_glassdoor, junk_recommandations, jk_columns, jk_columns, 'JK_Recommandations')
+
+    
+    fait_avis_glassdoor = avis_glassdoor[['Id_Entreprise','ID_Date_Publication','ID_Texte_Recommandation','ID_Infos_Employe','JK_Recommandations','Heure_Publication','Titre','Note']]
+
+    return fait_avis_glassdoor, dim_infos_employe, dim_texte_avis, junk_recommandations
