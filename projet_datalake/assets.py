@@ -360,13 +360,13 @@ def dim_entreprise(entreprise: pd.DataFrame)-> pd.DataFrame:
     return entreprise[['ID_Entreprise','Nom_Entreprise','Description','Site_Web','Siege_Social','Taille','Revenu','Annee_Fondation','Type_Entreprise','Secteur']]
 
 @multi_asset(
-            outs={
-                'fait_avis_glassdoor' : AssetOut(),
-                'jk_status_employe' : AssetOut(),
-                'dim_texte_avis' : AssetOut(),
-                'jk_recommandations' : AssetOut()
-            },
-            ins={"avis_glassdoor": AssetIn(key="avis_glassdoor")})
+    outs={
+        'fait_avis_glassdoor' : AssetOut(),
+        'jk_status_employe' : AssetOut(),
+        'dim_texte_avis' : AssetOut(),
+        'jk_recommandations' : AssetOut()
+    },
+    ins={"avis_glassdoor": AssetIn(key="avis_glassdoor")})
 def assets_avis_glassdoor(context: OpExecutionContext, avis_glassdoor: pd.DataFrame):
         
     avis_glassdoor.columns = ['Origine','Id_Entreprise','Nom_Entreprise','Date_Timestamp','Titre','Note','Description_Employe','Anciennete_Employe','Recommandation','Point_De_Vue','Approbation_PDG','Avantages','Inconvenients','Conseils_Direction']
@@ -383,13 +383,44 @@ def assets_avis_glassdoor(context: OpExecutionContext, avis_glassdoor: pd.DataFr
     
     dim_columns = ['Avantages','Inconvenients','Conseils_Direction']
     dim_texte_avis = avis_glassdoor[dim_columns].drop_duplicates()
-    avis_glassdoor, dim_texte_avis = bind_dataframes(avis_glassdoor, dim_texte_avis, dim_columns, dim_columns, 'ID_Texte_Recommandation')
+    avis_glassdoor, dim_texte_avis = bind_dataframes(avis_glassdoor, dim_texte_avis, dim_columns, dim_columns, 'ID_Texte_Avis')
     
     jk_columns = ['Recommandation','Point_De_Vue','Approbation_PDG']
     junk_recommandations = avis_glassdoor[jk_columns].drop_duplicates()
     avis_glassdoor, junk_recommandations = bind_dataframes(avis_glassdoor, junk_recommandations, jk_columns, jk_columns, 'JK_Recommandations')
 
     
-    fait_avis_glassdoor = avis_glassdoor[['Id_Entreprise','ID_Date_Publication','ID_Texte_Recommandation','ID_Infos_Employe','JK_Recommandations','Heure_Publication','Titre','Note']]
+    fait_avis_glassdoor = avis_glassdoor[['Id_Entreprise','ID_Date_Publication','ID_Texte_Recommandation','ID_Texte_Avis','ID_Infos_Employe','JK_Recommandations','Heure_Publication','Titre','Note']]
 
     return fait_avis_glassdoor, dim_infos_employe, dim_texte_avis, junk_recommandations
+
+@multi_asset(
+    outs={
+        'fait_emplois_linkedin' : AssetOut(),
+        'df_junk_hierarchie_fonction' : AssetOut()
+    },
+    ins={"emplois": AssetIn(key="emplois_linkedin")}
+)
+def assets_emplois_linkedin(context: OpExecutionContext, emplois: pd.DataFrame):
+    
+    emplois.columns = ['Nom_Entreprise','Titre_Offre','Lieu','Anciennete_Publication','Nombre_Candidats','Url','Description_Offre','Niveau_Hierarchique','Type_Emplois','Fonction','Secteurs']
+    
+    emplois['Anciennete_Publication'] = emplois['Anciennete_Publication'].fillna('Inconnue')
+    emplois['Nombre_Candidats'] = emplois['Nombre_Candidats'].fillna('Inconnue')
+    emplois['Url'] = emplois['Url'].fillna('Inconnue')
+    
+    emplois['Niveau_Hierarchique'] = emplois['Niveau_Hierarchique'].apply(lambda x: x[0])
+    emplois['Fonction'] = emplois['Fonction'].apply(lambda x: x[0])
+    emplois['Type_Emplois'] = emplois['Type_Emplois'].apply(lambda x: x[0])
+    
+    jk_columns = ['Type_Emplois','Niveau_Hierarchique','Fonction']
+    df_junk_hierarchie_fonction = (
+        emplois[jk_columns]
+        .drop_duplicates()
+        .sort_values(by=jk_columns))
+    
+    emplois, df_junk_hierarchie_fonction = bind_dataframes(emplois, df_junk_hierarchie_fonction, jk_columns, jk_columns, 'JK_hierarchie_fonction')
+    
+    emplois.columns = ['Nom_Entreprise','Titre_Offre','Lieu','Anciennete_Publication','Nombre_Candidats','Url','Description_Offre','JK_hierarchie_fonction','Fonction','Secteurs']
+
+    return emplois, df_junk_hierarchie_fonction
