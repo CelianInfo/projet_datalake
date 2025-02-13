@@ -361,7 +361,6 @@ def dim_entreprise(entreprise: pd.DataFrame)-> pd.DataFrame:
 @multi_asset(
     outs={
         'fait_avis_glassdoor' : AssetOut(),
-        'jk_status_employe' : AssetOut(),
         'dim_texte_avis' : AssetOut(),
         'jk_recommandations' : AssetOut()
     },
@@ -376,10 +375,6 @@ def assets_avis_glassdoor(context: OpExecutionContext, avis_glassdoor: pd.DataFr
     avis_glassdoor['ID_Date_Publication'] = avis_glassdoor['Date_Timestamp'].str.split(' ').apply(lambda x: x[0])
     avis_glassdoor['Heure_Publication'] = avis_glassdoor['Date_Timestamp'].str.split(' ').apply(lambda x: x[1])
     
-    dim_columns = ['Description_Employe','Anciennete_Employe']
-    dim_infos_employe = avis_glassdoor[dim_columns]
-    avis_glassdoor, dim_infos_employe = bind_dataframes(avis_glassdoor, dim_infos_employe, dim_columns, dim_columns, 'ID_Infos_Employe')
-    
     dim_columns = ['Avantages','Inconvenients','Conseils_Direction']
     dim_texte_avis = avis_glassdoor[dim_columns].drop_duplicates()
     avis_glassdoor, dim_texte_avis = bind_dataframes(avis_glassdoor, dim_texte_avis, dim_columns, dim_columns, 'ID_Texte_Avis')
@@ -389,12 +384,22 @@ def assets_avis_glassdoor(context: OpExecutionContext, avis_glassdoor: pd.DataFr
     avis_glassdoor, junk_recommandations = bind_dataframes(avis_glassdoor, junk_recommandations, jk_columns, jk_columns, 'JK_Recommandations')
 
     
-    fait_avis_glassdoor = avis_glassdoor[['Id_Entreprise','ID_Date_Publication','ID_Texte_Avis','ID_Infos_Employe','JK_Recommandations','Heure_Publication','Titre','Note']]
+    fait_avis_glassdoor = avis_glassdoor[['Id_Entreprise','ID_Date_Publication','ID_Texte_Avis','JK_Recommandations','Description_Employe','Anciennete_Employe','Heure_Publication','Titre','Note']]
 
-    return fait_avis_glassdoor, dim_infos_employe, dim_texte_avis, junk_recommandations
+    return fait_avis_glassdoor, dim_texte_avis, junk_recommandations
 
-@asset(ins={"emplois": AssetIn(key="emplois_linkedin")})
-def fait_emplois_linkedin(context: OpExecutionContext, emplois: pd.DataFrame):
+@asset
+def lieu():
+    return pd.read_csv("projet_datalake/data/Lieu.csv", sep=';')
+
+@multi_asset(
+    outs={
+    'fait_emplois_linkedin' : AssetOut(),
+    'dim_lieu' : AssetOut()
+    },
+    ins={"emplois": AssetIn(key="emplois_linkedin"), "lieu":AssetIn(key="lieu")}
+)
+def fait_emplois_linkedin(context: OpExecutionContext, emplois: pd.DataFrame, lieu: pd.DataFrame):
     
     emplois.columns = ['Nom_Entreprise','Titre_Offre','Lieu','Anciennete_Publication','Nombre_Candidats','Url','Description_Offre','Niveau_Hierarchique','Type_Emplois','Fonction','Secteurs']
     
@@ -405,4 +410,23 @@ def fait_emplois_linkedin(context: OpExecutionContext, emplois: pd.DataFrame):
     emplois['Niveau_Hierarchique'] = emplois['Niveau_Hierarchique'].apply(lambda x: x[0])
     emplois['Type_Emplois'] = emplois['Type_Emplois'].apply(lambda x: x[0])
 
-    return emplois
+    emplois['Lieu'] = emplois['Lieu'].str.replace(r'\d+, ', '', regex=True)
+    emplois['Lieu'] = emplois['Lieu'].str.split(',').str[0]
+    emplois['Lieu'] = emplois['Lieu'].str.replace(' FR','')
+    emplois['Lieu'] = emplois['Lieu'].str.replace(' Area','')
+    emplois['Lieu'] = emplois['Lieu'].str.replace('Région de ','')
+
+    mapping_dict = {
+        "Paris La Défense": "Paris",
+        "Paris et périphérie": "Paris",
+        "Paris Île-de-France": "Paris",
+    }
+
+    emplois['Lieu'] = emplois['Lieu'].replace(mapping_dict)
+    emplois['Lieu'] = emplois['Lieu'].str.strip()
+
+    emplois, dim_lieu = bind_dataframes(emplois, lieu, ['Lieu'], ['Ville'], 'ID_Lieu')
+
+    emplois = emplois[['Nom_Entreprise','Titre_Offre','ID_Lieu','Anciennete_Publication','Nombre_Candidats','Url','Description_Offre','Niveau_Hierarchique','Type_Emplois','Fonction','Secteurs']]
+
+    return emplois, lieu
