@@ -315,7 +315,6 @@ def emplois_linkedin(context):
     
     return pd.concat(linkedin_emplois_jsons, axis=0, ignore_index=True)
 
-
 @op
 def bind_dataframes(df1, df2, df1_columns, df2_columns, id_column_name):
     """
@@ -390,18 +389,12 @@ def assets_avis_glassdoor(context: OpExecutionContext, avis_glassdoor: pd.DataFr
     avis_glassdoor, junk_recommandations = bind_dataframes(avis_glassdoor, junk_recommandations, jk_columns, jk_columns, 'JK_Recommandations')
 
     
-    fait_avis_glassdoor = avis_glassdoor[['Id_Entreprise','ID_Date_Publication','ID_Texte_Recommandation','ID_Texte_Avis','ID_Infos_Employe','JK_Recommandations','Heure_Publication','Titre','Note']]
+    fait_avis_glassdoor = avis_glassdoor[['Id_Entreprise','ID_Date_Publication','ID_Texte_Avis','ID_Infos_Employe','JK_Recommandations','Heure_Publication','Titre','Note']]
 
     return fait_avis_glassdoor, dim_infos_employe, dim_texte_avis, junk_recommandations
 
-@multi_asset(
-    outs={
-        'fait_emplois_linkedin' : AssetOut(),
-        'df_junk_hierarchie_fonction' : AssetOut()
-    },
-    ins={"emplois": AssetIn(key="emplois_linkedin")}
-)
-def assets_emplois_linkedin(context: OpExecutionContext, emplois: pd.DataFrame):
+@asset(ins={"emplois": AssetIn(key="emplois_linkedin")})
+def fait_emplois_linkedin(context: OpExecutionContext, emplois: pd.DataFrame):
     
     emplois.columns = ['Nom_Entreprise','Titre_Offre','Lieu','Anciennete_Publication','Nombre_Candidats','Url','Description_Offre','Niveau_Hierarchique','Type_Emplois','Fonction','Secteurs']
     
@@ -410,17 +403,6 @@ def assets_emplois_linkedin(context: OpExecutionContext, emplois: pd.DataFrame):
     emplois['Url'] = emplois['Url'].fillna('Inconnue')
     
     emplois['Niveau_Hierarchique'] = emplois['Niveau_Hierarchique'].apply(lambda x: x[0])
-    emplois['Fonction'] = emplois['Fonction'].apply(lambda x: x[0])
     emplois['Type_Emplois'] = emplois['Type_Emplois'].apply(lambda x: x[0])
-    
-    jk_columns = ['Type_Emplois','Niveau_Hierarchique','Fonction']
-    df_junk_hierarchie_fonction = (
-        emplois[jk_columns]
-        .drop_duplicates()
-        .sort_values(by=jk_columns))
-    
-    emplois, df_junk_hierarchie_fonction = bind_dataframes(emplois, df_junk_hierarchie_fonction, jk_columns, jk_columns, 'JK_hierarchie_fonction')
-    
-    emplois.columns = ['Nom_Entreprise','Titre_Offre','Lieu','Anciennete_Publication','Nombre_Candidats','Url','Description_Offre','JK_hierarchie_fonction','Fonction','Secteurs']
 
-    return emplois, df_junk_hierarchie_fonction
+    return emplois
