@@ -1,0 +1,42 @@
+"JK_Recommandations";"Recommandation";"Point_De_Vue";"Approbation_PDG"
+1;Recommande;Non indiqué;Approuve le PDG
+2;Recommande;Point de vue positif;Pas d'avis sur le PDG
+3;Ne recommande pas;Point de vue négatif;N'approuve pas le PDG
+4;Ne recommande pas;Point de vue négatif;Pas d'avis sur le PDG
+5;Non indiqué;Non indiqué;Non indiqué
+6;Recommande;Point de vue neutre;Approuve le PDG
+7;Recommande;Point de vue positif;Approuve le PDG
+8;Recommande;Point de vue neutre;Pas d'avis sur le PDG
+9;Ne recommande pas;Point de vue positif;Pas d'avis sur le PDG
+10;Recommande;Point de vue négatif;Approuve le PDG
+11;Ne recommande pas;Point de vue neutre;Pas d'avis sur le PDG
+12;Recommande;Point de vue positif;N'approuve pas le PDG
+13;Recommande;Point de vue neutre;N'approuve pas le PDG
+14;Ne recommande pas;Point de vue neutre;Non indiqué
+15;Recommande;Point de vue neutre;Non indiqué
+16;Ne recommande pas;Non indiqué;Non indiqué
+17;Recommande;Point de vue positif;Non indiqué
+18;Ne recommande pas;Point de vue négatif;Non indiqué
+19;Non indiqué;Non indiqué;Approuve le PDG
+20;Ne recommande pas;Point de vue neutre;N'approuve pas le PDG
+21;Recommande;Point de vue négatif;Pas d'avis sur le PDG
+22;Ne recommande pas;Non indiqué;Pas d'avis sur le PDG
+23;Ne recommande pas;Point de vue positif;N'approuve pas le PDG
+24;Recommande;Non indiqué;Non indiqué
+25;Recommande;Point de vue négatif;Non indiqué
+26;Non indiqué;Point de vue neutre;Pas d'avis sur le PDG
+27;Non indiqué;Point de vue négatif;N'approuve pas le PDG
+28;Ne recommande pas;Non indiqué;Approuve le PDG
+29;Ne recommande pas;Point de vue négatif;Approuve le PDG
+30;Ne recommande pas;Point de vue neutre;Approuve le PDG
+31;Recommande;Non indiqué;Pas d'avis sur le PDG
+32;Recommande;Point de vue négatif;N'approuve pas le PDG
+33;Non indiqué;Non indiqué;N'approuve pas le PDG
+34;Non indiqué;Point de vue neutre;Non indiqué
+35;Non indiqué;Point de vue positif;Non indiqué
+36;Non indiqué;Non indiqué;Pas d'avis sur le PDG
+37;Non indiqué;Point de vue positif;Pas d'avis sur le PDG
+38;Ne recommande pas;Point de vue positif;Approuve le PDG
+39;Ne recommande pas;Point de vue positif;Non indiqué
+40;Ne recommande pas;Non indiqué;N'approuve pas le PDG
+41;Non indiqué;Point de vue négatif;Non indiqué
